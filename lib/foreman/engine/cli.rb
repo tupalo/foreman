@@ -49,15 +49,20 @@ class Foreman::Engine::CLI < Foreman::Engine
 
   def startup
     @colors = map_colors
+    @previous_timestamp = Time.now
     proctitle "foreman: master" unless Foreman.windows?
     Color.enable($stdout, options[:color])
   end
 
   def output(name, data)
+    timestamp = Time.now
+    elapsed = timestamp - @previous_timestamp
+    @previous_timestamp = timestamp
+
     data.to_s.lines.map(&:chomp).each do |message|
       output  = ""
       output += $stdout.color(@colors[name.split(".").first].to_sym)
-      output += "#{Time.now.strftime("%H:%M:%S")} #{pad_process_name(name)} | "
+      output += "#{Time.now.strftime("%H:%M:%S.%3N")} (#{'%05.1f ms' % (elapsed.round(3)* 1000)}) #{pad_process_name(name)} | "
       output += $stdout.color(:reset)
       output += message
       $stdout.puts output
